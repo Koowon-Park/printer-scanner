@@ -151,20 +151,25 @@ func snmpScanOIDS(ip net.IP, oidsToScan []string) (varBinds snmpgo.VarBinds, err
 		Community: "public",                     // 커뮤니티 문자열
 	})
 	if err != nil {
+		// log.Printf("Failed to allocate SNMP Request: %v\n", err)
 		return nil, err
 	}
 	// OID 구문 분석
-	oids, err := snmpgo.NewOids(oidsToScan)
+	oids, err := snmpgo.NewOids(oidsToScan) /*Add commentMore actions*/
+
 	if err != nil {
+		// log.Printf("Failed to parse Oids: %v\n", err)
 		return nil, err
 	}
 	// SNMP 연결 오픈
 	if err = snmp.Open(); err != nil {
+		// log.Printf("Failed to open connection to %v: %v\n", ip, err)
 		return
 	}
 	defer snmp.Close()
 
 	// Bulk Walk로 여러 OID를 한번에 조회
+	// pdu, err := snmp.GetRequest(oids)
 	var nonRepeaters = 0
 	var maxRepetitions = 10
 	pdu, err := snmp.GetBulkWalk(oids, nonRepeaters, maxRepetitions)
@@ -182,7 +187,7 @@ func SnmpScan(ip net.IP) (varBinds snmpgo.VarBinds, err error) {
 		return nil, err
 	}
 
-	// 제조사별 OID를 goroutine으로 병렬 조회, 결과를 vBinds에 합침
+	// 제조사별 OID를 비동기 조회, 결과를 vBinds에 합침
 	var wg sync.WaitGroup
 	for _, oids := range EXTRA_OIDS {
 		wg.Add(1)
